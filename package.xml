@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>px4_comm</name>
-  <version>0.0.0</version>
+  <version>0.1.0</version>
   <description>The px4_comm package</description>
   <maintainer email="emil.fresk@gmail.com">Emil Fresk</maintainer>
   <license>BSL-1.0</license>
