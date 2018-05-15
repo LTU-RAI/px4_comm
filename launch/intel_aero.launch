@@ -1,0 +1,36 @@
+<launch>
+  <arg name="mav_name" default="aeroname"/>
+  <arg name="namespace" default="$(arg mav_name)" />
+
+  <arg name="fcu_url" default="tcp://127.0.0.1:5760" />
+  <arg name="gcs_url" default="" />
+  <arg name="tgt_system" default="1" />
+  <arg name="tgt_component" default="1" />
+  <arg name="pluginlists_yaml" default="" />
+  <arg name="config_yaml" default="" />
+  <arg name="log_output" default="screen" />
+  <arg name="fcu_protocol" default="v2.0" />
+  <arg name="respawn_mavros" default="false" />
+
+
+  <group ns="$(arg namespace)" >
+
+    <node pkg="mavros" type="mavros_node" name="mavros" required="$(eval not respawn_mavros)" clear_params="true" output="$(arg log_output)" respawn="$(arg respawn_mavros)">
+      <param name="fcu_url" value="$(arg fcu_url)" />
+      <param name="gcs_url" value="$(arg gcs_url)" />
+      <param name="target_system_id" value="$(arg tgt_system)" />
+      <param name="target_component_id" value="$(arg tgt_component)" />
+      <param name="fcu_protocol" value="$(arg fcu_protocol)" />
+
+      <!— load blacklist, config —>
+      <rosparam command="load" file="$(arg pluginlists_yaml)" />
+      <rosparam command="load" file="$(arg config_yaml)" />
+
+      <!— signal remapping —>
+      <remap from="msf_core/imu_state_input" to="imu" />
+    </node>
+
+    <node pkg="px4_comm" type="px4_comm_node" name="px4_comm">
+    </node>
+  </group>
+</launch>
