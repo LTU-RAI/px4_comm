@@ -22,15 +22,15 @@
       <param name="target_component_id" value="$(arg tgt_component)" />
       <param name="fcu_protocol" value="$(arg fcu_protocol)" />
 
-      <!— load blacklist, config —>
-      <rosparam command="load" file="$(arg pluginlists_yaml)" />
-      <rosparam command="load" file="$(arg config_yaml)" />
+      <!-- load blacklist, config -->
+      <!-- <rosparam command="load" file="$(arg pluginlists_yaml)" /> -->
+      <!-- <rosparam command="load" file="$(arg config_yaml)" /> -->
 
-      <!— signal remapping —>
-      <remap from="msf_core/imu_state_input" to="imu" />
+      <!-- signal remapping -->
+      <remap from="mavros/imu/data_raw" to="imu" />
     </node>
 
-    <node pkg="px4_comm" type="px4_comm_node" name="px4_comm">
+    <node pkg="px4_comm" type="px4_comm_node" name="px4_comm" output="$(arg log_output)">
     </node>
   </group>
 </launch>
