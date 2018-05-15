@@ -105,9 +105,9 @@ void px4_communication::callback_mavros_altitude(
   static int i = 0;
   i++;
 
-  if (i > 10)
+  if (i > 50)
   {
-    ROS_WARN("Got MAVROS Altitude, not implemented");
+    ROS_WARN("Got MAVROS Altitude, not implemented (50x)");
     i = 0;
   }
 }
