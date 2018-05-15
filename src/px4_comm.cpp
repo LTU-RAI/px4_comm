@@ -11,13 +11,13 @@ void px4_communication::callback_roll_pitch_yawrate_thrust(
   ROS_WARN("Got Roll Pitch Yawrate Thrust command, not implemented");
 
   Quaterniond q = AngleAxisd(msg->roll, Vector3d::UnitX()) *
-                         AngleAxisd(msg->pitch, Vector3d::UnitY()) *
-                         AngleAxisd(0, Vector3d::UnitZ());
+                  AngleAxisd(msg->pitch, Vector3d::UnitY()) *
+                  AngleAxisd(0, Vector3d::UnitZ());
 
   mavros_msgs::AttitudeTarget target;
 
   target.type_mask = mavros_msgs::AttitudeTarget::IGNORE_ROLL_RATE |
-                       mavros_msgs::AttitudeTarget::IGNORE_PITCH_RATE;
+                     mavros_msgs::AttitudeTarget::IGNORE_PITCH_RATE;
 
   target.orientation.x = q.x();
   target.orientation.y = q.y();
@@ -30,7 +30,8 @@ void px4_communication::callback_roll_pitch_yawrate_thrust(
 
   target.thrust = msg->thrust.z;
 
-  command_pub_.publish( target );
+  target.header.stamp = ros::Time::now();
+  command_pub_.publish(target);
 }
 
 void px4_communication::callback_rollrate_pitchrate_yawrate_thrust(
@@ -53,25 +54,25 @@ void px4_communication::callback_rollrate_pitchrate_yawrate_thrust(
 
   target.thrust = msg->thrust.z;
 
-  command_pub_.publish( target );
+  target.header.stamp = ros::Time::now();
+  command_pub_.publish(target);
 }
 
 void px4_communication::callback_mavros_rc_value(
     const mavros_msgs::RCInConstPtr& msg)
 {
-  ROS_WARN("Got MAVROS RCIn, not implemented");
-
   sensor_msgs::Joy joy;
   for (auto ch : msg->channels)
     joy.axes.push_back(ch);
 
+  joy.header.stamp = ros::Time::now();
   rc_pub_.publish(joy);
 }
 
 void px4_communication::callback_mavros_state(
     const mavros_msgs::StateConstPtr& msg)
 {
-  ROS_WARN("Got MAVROS State, not implemented");
+  status_msg_.header.stamp = ros::Time::now();
 
   if (msg->mode == "OFFBOARD")
     status_msg_.command_interface_enabled = true;
@@ -95,14 +96,20 @@ void px4_communication::callback_mavros_state(
 void px4_communication::callback_mavros_battery(
     const sensor_msgs::BatteryStateConstPtr& msg)
 {
-  ROS_WARN("Got MAVROS Battery, not implemented");
   status_msg_.battery_voltage = msg->voltage;
 }
 
 void px4_communication::callback_mavros_altitude(
     const mavros_msgs::AltitudeConstPtr& msg)
 {
-  ROS_WARN("Got MAVROS Altitude, not implemented");
+  static int i = 0;
+  i++;
+
+  if (i > 10)
+  {
+    ROS_WARN("Got MAVROS Altitude, not implemented");
+    i = 0;
+  }
 }
 
 px4_communication::px4_communication(ros::NodeHandle& pub_nh,
@@ -124,6 +131,7 @@ px4_communication::px4_communication(ros::NodeHandle& pub_nh,
   status_msg_.system_uptime = 0;
   status_msg_.vehicle_name = "no type";
   status_msg_.vehicle_type = "no name";
+  status_msg_.header.stamp = ros::Time::now();
 
   //
   // UAV comm topics
