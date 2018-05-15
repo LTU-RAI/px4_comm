@@ -8,7 +8,6 @@ void px4_communication::callback_roll_pitch_yawrate_thrust(
     const mav_msgs::RollPitchYawrateThrustConstPtr& msg)
 {
   using namespace Eigen;
-  ROS_WARN("Got Roll Pitch Yawrate Thrust command, not implemented");
 
   Quaterniond q = AngleAxisd(msg->roll, Vector3d::UnitX()) *
                   AngleAxisd(msg->pitch, Vector3d::UnitY()) *
