@@ -3,11 +3,11 @@
   <arg name="namespace" default="$(arg mav_name)" />
 
   <arg name="fcu_url" default="tcp://127.0.0.1:5760" />
-  <arg name="gcs_url" default="" />
+  <arg name="gcs_url" default="udp://@192.168.1.224:14550" />
   <arg name="tgt_system" default="1" />
   <arg name="tgt_component" default="1" />
-  <arg name="pluginlists_yaml" default="" />
-  <arg name="config_yaml" default="" />
+  <arg name="pluginlists_yaml" default="$(find mavros)/launch/px4_pluginlists.yaml" />
+  <arg name="config_yaml" default="$(find px4_comm)/launch/px4_config_rpyrt.yaml" />
   <arg name="log_output" default="screen" />
   <arg name="fcu_protocol" default="v2.0" />
   <arg name="respawn_mavros" default="false" />
@@ -23,8 +23,8 @@
       <param name="fcu_protocol" value="$(arg fcu_protocol)" />
 
       <!-- load blacklist, config -->
-      <!-- <rosparam command="load" file="$(arg pluginlists_yaml)" /> -->
-      <!-- <rosparam command="load" file="$(arg config_yaml)" /> -->
+      <rosparam command="load" file="$(arg pluginlists_yaml)" />
+      <rosparam command="load" file="$(arg config_yaml)" />
 
       <!-- signal remapping -->
       <remap from="mavros/imu/data_raw" to="imu" />

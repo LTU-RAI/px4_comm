@@ -2,16 +2,15 @@
 #include "px4_comm/px4_comm.hpp"
 #include "mav_msgs/conversions.h"
 #include <Eigen/Dense>
+#include <mavros/frame_tf.h>
 
 // Callback functions for subscribed messages
 void px4_communication::callback_roll_pitch_yawrate_thrust(
     const mav_msgs::RollPitchYawrateThrustConstPtr& msg)
 {
-  using namespace Eigen;
+  using namespace mavros;
 
-  Quaterniond q = AngleAxisd(msg->roll, Vector3d::UnitX()) *
-                  AngleAxisd(msg->pitch, Vector3d::UnitY()) *
-                  AngleAxisd(0, Vector3d::UnitZ());
+  auto q = ftf::quaternion_from_rpy(msg->roll, msg->pitch, 0.0);
 
   mavros_msgs::AttitudeTarget target;
 
@@ -36,7 +35,7 @@ void px4_communication::callback_roll_pitch_yawrate_thrust(
 void px4_communication::callback_rollrate_pitchrate_yawrate_thrust(
     const mav_msgs::RateThrustConstPtr& msg)
 {
-  ROS_WARN("Got Rate Thrust command, not implemented");
+  ROS_ERROR_ONCE("Got Rate Thrust command, not implemented");
 
   mavros_msgs::AttitudeTarget target;
 
@@ -101,14 +100,7 @@ void px4_communication::callback_mavros_battery(
 void px4_communication::callback_mavros_altitude(
     const mavros_msgs::AltitudeConstPtr& msg)
 {
-  static int i = 0;
-  i++;
-
-  if (i > 50)
-  {
-    ROS_WARN("Got MAVROS Altitude, not implemented (50x)");
-    i = 0;
-  }
+  ROS_ERROR_ONCE("Got MAVROS Altitude, not implemented (50x)");
 }
 
 px4_communication::px4_communication(ros::NodeHandle& pub_nh,

@@ -9,6 +9,7 @@ add_compile_options(-std=c++14)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   mavros_msgs
+  mavros
   mav_msgs
   roscpp
   sensor_msgs
@@ -108,7 +109,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES px4_comm
-  CATKIN_DEPENDS mav_msgs roscpp sensor_msgs std_msgs
+  CATKIN_DEPENDS mav_msgs mavros_msgs mavros roscpp sensor_msgs std_msgs
   #  DEPENDS system_lib
 )
 
