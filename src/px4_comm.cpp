@@ -15,7 +15,7 @@ void px4_communication::callback_roll_pitch_yawrate_thrust(
 {
   using namespace mavros;
 
-  auto q = ftf::quaternion_from_rpy(msg->roll, msg->pitch, 0.0);
+  auto q = ftf::quaternion_from_rpy(msg->roll, msg->pitch, current_yaw);
 
   mavros_msgs::AttitudeTarget target;
 
@@ -108,6 +108,12 @@ void px4_communication::callback_mavros_altitude(
   ROS_ERROR_ONCE("Got MAVROS Altitude, not implemented (50x)");
 }
 
+void px4_communication::callback_mavros_imu(const sensor_msgs::ImuConstPtr& msg)
+{
+  current_yaw = mavros::ftf::quaternion_get_yaw(
+      mav_msgs::quaternionFromMsg(msg->orientation));
+}
+
 px4_communication::px4_communication(ros::NodeHandle& pub_nh,
                                      ros::NodeHandle& priv_nh)
     : public_nh_(pub_nh), priv_nh_(priv_nh)
@@ -128,6 +134,8 @@ px4_communication::px4_communication(ros::NodeHandle& pub_nh,
   status_msg_.vehicle_name = "no type";
   status_msg_.vehicle_type = "no name";
   status_msg_.header.stamp = ros::Time::now();
+
+  current_yaw = 0;
 
   //
   // UAV comm topics
@@ -169,6 +177,10 @@ px4_communication::px4_communication(ros::NodeHandle& pub_nh,
   altitude_sub_ = public_nh_.subscribe(
       "mavros/altitude", 5, &px4_communication::callback_mavros_altitude, this,
       ros::TransportHints().tcpNoDelay());
+
+  imu_sub_ = public_nh_.subscribe("mavros/imu/data", 5,
+                                  &px4_communication::callback_mavros_imu, this,
+                                  ros::TransportHints().tcpNoDelay());
 }
 
 void px4_communication::ros_loop()

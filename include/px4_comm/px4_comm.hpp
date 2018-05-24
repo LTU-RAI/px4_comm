@@ -31,6 +31,7 @@ private:
   // mav_msgs side
   ros::Subscriber ratethrust_sub_;
   ros::Subscriber rpyrt_sub_;
+  ros::Subscriber imu_sub_;
   ros::Publisher status_pub_;
   ros::Publisher rc_pub_;
 
@@ -51,9 +52,11 @@ private:
   void callback_mavros_state(const mavros_msgs::StateConstPtr& msg);
   void callback_mavros_battery(const sensor_msgs::BatteryStateConstPtr& msg);
   void callback_mavros_altitude(const mavros_msgs::AltitudeConstPtr& msg);
+  void callback_mavros_imu(const sensor_msgs::ImuConstPtr& msg);
 
   // Local variables
   mav_msgs::Status status_msg_;
+  double current_yaw;
 
 public:
 
