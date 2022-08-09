@@ -7,14 +7,11 @@
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "uav_comm_node");
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<px4_communication>();
 
-  ros::NodeHandle n;
-  ros::NodeHandle pn("~");
-
-  px4_communication comm(n, pn);
-
-  comm.ros_loop();
+//  comm.ros_loop();
+  rclcpp::spin(node);
 
   return 0;
 }

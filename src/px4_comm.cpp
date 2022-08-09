@@ -5,22 +5,20 @@
 
 // User includes
 #include "px4_comm/px4_comm.hpp"
-#include "mav_msgs/conversions.h"
-#include <Eigen/Dense>
-#include <mavros/frame_tf.h>
+//#include "mav_msgs/msg/conversions.hpp"
 
 // Callback functions for subscribed messages
 void px4_communication::callback_roll_pitch_yawrate_thrust(
-    const mav_msgs::RollPitchYawrateThrustConstPtr& msg)
+    const mav_msgs::msg::RollPitchYawrateThrust::SharedPtr msg)
 {
   using namespace mavros;
 
   auto q = ftf::quaternion_from_rpy(msg->roll, msg->pitch, current_yaw);
 
-  mavros_msgs::AttitudeTarget target;
+  mavros_msgs::msg::AttitudeTarget target;
 
-  target.type_mask = mavros_msgs::AttitudeTarget::IGNORE_ROLL_RATE |
-                     mavros_msgs::AttitudeTarget::IGNORE_PITCH_RATE;
+  target.type_mask = mavros_msgs::msg::AttitudeTarget::IGNORE_ROLL_RATE |
+                     mavros_msgs::msg::AttitudeTarget::IGNORE_PITCH_RATE;
 
   target.orientation.x = q.x();
   target.orientation.y = q.y();
@@ -33,18 +31,18 @@ void px4_communication::callback_roll_pitch_yawrate_thrust(
 
   target.thrust = msg->thrust.z;
 
-  target.header.stamp = ros::Time::now();
-  command_pub_.publish(target);
+  target.header.stamp = this->get_clock()->now();
+  command_pub_->publish(target);
 }
 
 void px4_communication::callback_rollrate_pitchrate_yawrate_thrust(
-    const mav_msgs::RateThrustConstPtr& msg)
+    const mav_msgs::msg::RateThrust::SharedPtr msg)
 {
-  ROS_ERROR_ONCE("Got Rate Thrust command, not implemented");
+  RCLCPP_ERROR_ONCE(this->get_logger(),"Got Rate Thrust command, not implemented");
 
-  mavros_msgs::AttitudeTarget target;
+  mavros_msgs::msg::AttitudeTarget target;
 
-  target.type_mask = mavros_msgs::AttitudeTarget::IGNORE_ATTITUDE;
+  target.type_mask = mavros_msgs::msg::AttitudeTarget::IGNORE_ATTITUDE;
 
   target.orientation.x = 0;
   target.orientation.y = 0;
@@ -57,25 +55,25 @@ void px4_communication::callback_rollrate_pitchrate_yawrate_thrust(
 
   target.thrust = msg->thrust.z;
 
-  target.header.stamp = ros::Time::now();
-  command_pub_.publish(target);
+  target.header.stamp = this->get_clock()->now();
+  command_pub_->publish(target);
 }
 
 void px4_communication::callback_mavros_rc_value(
-    const mavros_msgs::RCInConstPtr& msg)
+    const mavros_msgs::msg::RCIn::SharedPtr msg)
 {
-  sensor_msgs::Joy joy;
+    sensor_msgs::msg::Joy joy;
   for (auto ch : msg->channels)
     joy.axes.push_back(ch);
 
-  joy.header.stamp = ros::Time::now();
-  rc_pub_.publish(joy);
+  joy.header.stamp = this->get_clock()->now();
+  rc_pub_->publish(joy);
 }
 
 void px4_communication::callback_mavros_state(
-    const mavros_msgs::StateConstPtr& msg)
+    const mavros_msgs::msg::State::SharedPtr msg)
 {
-  status_msg_.header.stamp = ros::Time::now();
+  status_msg_.header.stamp = this->get_clock()->now();
 
   if (msg->mode == "OFFBOARD")
     status_msg_.command_interface_enabled = true;
@@ -85,38 +83,37 @@ void px4_communication::callback_mavros_state(
   if (msg->armed == true)
   {
     status_msg_.in_air = true;
-    status_msg_.motor_status = mav_msgs::Status::MOTOR_STATUS_RUNNING;
+    status_msg_.motor_status = mav_msgs::msg::Status::MOTOR_STATUS_RUNNING;
   }
   else
   {
     status_msg_.in_air = false;
-    status_msg_.motor_status = mav_msgs::Status::MOTOR_STATUS_STOPPED;
+    status_msg_.motor_status = mav_msgs::msg::Status::MOTOR_STATUS_STOPPED;
   }
 
-  status_pub_.publish(status_msg_);
+  status_pub_->publish(status_msg_);
 }
 
 void px4_communication::callback_mavros_battery(
-    const sensor_msgs::BatteryStateConstPtr& msg)
+    const sensor_msgs::msg::BatteryState::SharedPtr msg)
 {
   status_msg_.battery_voltage = msg->voltage;
 }
 
 void px4_communication::callback_mavros_altitude(
-    const mavros_msgs::AltitudeConstPtr& msg)
+    const mavros_msgs::msg::Altitude::SharedPtr msg)
 {
-  ROS_ERROR_ONCE("Got MAVROS Altitude, not implemented (50x)");
+  RCLCPP_ERROR_ONCE(this->get_logger(),"Got MAVROS Altitude, not implemented (50x)");
 }
 
-void px4_communication::callback_mavros_imu(const sensor_msgs::ImuConstPtr& msg)
+void px4_communication::callback_mavros_imu(const sensor_msgs::msg::Imu::SharedPtr msg)
 {
   current_yaw = mavros::ftf::quaternion_get_yaw(
-      mav_msgs::quaternionFromMsg(msg->orientation));
+      quaternionFromMsg(msg->orientation));
 }
 
-px4_communication::px4_communication(ros::NodeHandle& pub_nh,
-                                     ros::NodeHandle& priv_nh)
-    : public_nh_(pub_nh), priv_nh_(priv_nh)
+px4_communication::px4_communication()
+    : Node("uav_comm_node")
 {
   //
   // Local variables
@@ -126,64 +123,52 @@ px4_communication::px4_communication(ros::NodeHandle& pub_nh,
   status_msg_.cpu_load = 0;
   status_msg_.flight_time = 0;
   status_msg_.gps_num_satellites = 0;
-  status_msg_.gps_status = mav_msgs::Status::GPS_STATUS_NO_LOCK;
+  status_msg_.gps_status = mav_msgs::msg::Status::GPS_STATUS_NO_LOCK;
   status_msg_.in_air = false;
-  status_msg_.motor_status = mav_msgs::Status::MOTOR_STATUS_STOPPED;
-  status_msg_.rc_command_mode = mav_msgs::Status::RC_COMMAND_ATTITUDE;
+  status_msg_.motor_status = mav_msgs::msg::Status::MOTOR_STATUS_STOPPED;
+  status_msg_.rc_command_mode = mav_msgs::msg::Status::RC_COMMAND_ATTITUDE;
   status_msg_.system_uptime = 0;
   status_msg_.vehicle_name = "no type";
   status_msg_.vehicle_type = "no name";
-  status_msg_.header.stamp = ros::Time::now();
+  status_msg_.header.stamp = this->get_clock()->now();
 
   current_yaw = 0;
 
   //
   // UAV comm topics
   //
-  ratethrust_sub_ = public_nh_.subscribe(
-      mav_msgs::default_topics::COMMAND_RATE_THRUST, 5,
-      &px4_communication::callback_rollrate_pitchrate_yawrate_thrust, this,
-      ros::TransportHints().tcpNoDelay());
+  ratethrust_sub_ = this->create_subscription<mav_msgs::msg::RateThrust>(
+      "command/rate_thrust", 10,
+      std::bind(&px4_communication::callback_rollrate_pitchrate_yawrate_thrust, this, std::placeholders::_1));
 
-  rpyrt_sub_ = public_nh_.subscribe(
-      mav_msgs::default_topics::COMMAND_ROLL_PITCH_YAWRATE_THRUST, 5,
-      &px4_communication::callback_roll_pitch_yawrate_thrust, this,
-      ros::TransportHints().tcpNoDelay());
+  rpyrt_sub_ = this->create_subscription<mav_msgs::msg::RollPitchYawrateThrust>(
+      "command/roll_pitch_yawrate_thrust", 5,
+      std::bind(&px4_communication::callback_roll_pitch_yawrate_thrust, this, std::placeholders::_1));
 
-  status_pub_ = public_nh_.advertise< mav_msgs::Status >(
-      mav_msgs::default_topics::STATUS, 1);
+  status_pub_ = this->create_publisher< mav_msgs::msg::Status >("status", 1);
 
-  rc_pub_ =
-      public_nh_.advertise< sensor_msgs::Joy >(mav_msgs::default_topics::RC, 1);
+  rc_pub_ = this->create_publisher< sensor_msgs::msg::Joy >("rc", 1);
 
   //
   // mavros topics
   //
-  command_pub_ = public_nh_.advertise< mavros_msgs::AttitudeTarget >(
+  command_pub_ = this->create_publisher< mavros_msgs::msg::AttitudeTarget >(
       "mavros/setpoint_raw/attitude", 10);
 
-  rc_sub_ = public_nh_.subscribe("mavros/rc/in", 5,
-                                 &px4_communication::callback_mavros_rc_value,
-                                 this, ros::TransportHints().tcpNoDelay());
+  rc_sub_ = this->create_subscription<mavros_msgs::msg::RCIn>("mavros/rc/in", 5,
+                                 std::bind(&px4_communication::callback_mavros_rc_value,
+                                 this, std::placeholders::_1));
 
-  state_sub_ = public_nh_.subscribe("mavros/state", 5,
-                                    &px4_communication::callback_mavros_state,
-                                    this, ros::TransportHints().tcpNoDelay());
+  state_sub_ = this->create_subscription<mavros_msgs::msg::State>("mavros/state", 5,
+                                    std::bind(&px4_communication::callback_mavros_state, this, std::placeholders::_1));
 
-  battery_sub_ = public_nh_.subscribe(
-      "mavros/battery", 5, &px4_communication::callback_mavros_battery, this,
-      ros::TransportHints().tcpNoDelay());
+  battery_sub_ = this->create_subscription<sensor_msgs::msg::BatteryState>(
+      "mavros/battery", 5, std::bind(&px4_communication::callback_mavros_battery, this, std::placeholders::_1));
 
-  altitude_sub_ = public_nh_.subscribe(
-      "mavros/altitude", 5, &px4_communication::callback_mavros_altitude, this,
-      ros::TransportHints().tcpNoDelay());
+  altitude_sub_ = this->create_subscription<mavros_msgs::msg::Altitude>( 
+      "mavros/altitude", 5, std::bind(&px4_communication::callback_mavros_altitude, this, std::placeholders::_1));
 
-  imu_sub_ = public_nh_.subscribe("mavros/imu/data", 5,
-                                  &px4_communication::callback_mavros_imu, this,
-                                  ros::TransportHints().tcpNoDelay());
+  imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>("mavros/imu/data", 5,
+                                  std::bind(&px4_communication::callback_mavros_imu, this, std::placeholders::_1));
 }
 
-void px4_communication::ros_loop()
-{
-  ros::spin();
-}
